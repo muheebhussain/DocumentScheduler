@@ -10,5 +10,7 @@ namespace DocumentScheduler.Lib.Services.Interface
     {
         Task QueueDocument(UserInputViewModel input);
         DocumentViewModel GetDocument(string id);
+
+        bool UpdateDocument(DocumentViewModel doc);
     }
 }

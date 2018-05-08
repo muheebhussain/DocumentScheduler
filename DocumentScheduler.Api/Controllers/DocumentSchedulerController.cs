@@ -55,13 +55,24 @@ namespace DocumentScheduler.Api.Controllers
 
         // PUT: api/DocumentScheduler/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
+        public IActionResult Put(string id, [FromBody]DocumentViewModel document)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var updated =_docSchedulerService.UpdateDocument(document);
+
+            if (updated)
+                return Ok();
+            else
+            {
+                return BadRequest();
+            }
         }
         
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public void Delete(string id)
         {
         }
     }

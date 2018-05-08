@@ -8,5 +8,7 @@ namespace DocumentScheduler.Lib.Core.Interface
         Task QueueDocumentAsync(UserInputViewModel input);
 
         DocumentViewModel GetDocumentByDocId(string id);
+
+        bool UpdateDocument(DocumentViewModel doc);
     }
 }

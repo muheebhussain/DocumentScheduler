@@ -147,6 +147,16 @@ namespace DocumentScheduler.Lib.Core
             await SpinDownServerAsync();
         }
 
+        public bool UpdateDocument(DocumentViewModel updatedDoc)
+        {
+            var document = docList.FirstOrDefault(d => d.DocId == updatedDoc.DocId &&
+                                                  d.IsInProcess);
+            if (document != null)
+                docList.Find(updatedDoc).Value.IsCompleted = true;
+
+            return !(document is null);
+        }
+
         #region Helper Methods
 
         

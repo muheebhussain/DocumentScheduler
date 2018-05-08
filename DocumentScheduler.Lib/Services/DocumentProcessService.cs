@@ -21,6 +21,11 @@ namespace DocumentScheduler.Lib.Services
             return _docScheduler.GetDocumentByDocId(id);
         }
 
+        public bool UpdateDocument(DocumentViewModel doc)
+        {
+            return _docScheduler.UpdateDocument(doc);
+        }
+
         public async  Task QueueDocument(UserInputViewModel input)
         {
             await _docScheduler.QueueDocumentAsync(input);
