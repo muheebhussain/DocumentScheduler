@@ -34,10 +34,10 @@ namespace DocumentScheduler.Api.Controllers
                 return BadRequest();
             //Note: Ideally I use Auto mapper library to map Domain to View Model, Didn't 
             //Implement auto mapper to stick on task
-            var docList = _docSchedulerService.GetDocument(id);
-            if (docList is null)
+            var doc = _docSchedulerService.GetDocument(id);
+            if (doc is null)
                 return NotFound();
-            return Ok(new DocumentViewModel());
+            return Ok(doc);
         }
 
         // POST: api/DocumentScheduler

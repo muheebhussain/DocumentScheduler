@@ -134,13 +134,14 @@ namespace DocumentScheduler.Lib.Core
                         try
                         {
                             Task.Delay(TimeSpan.FromMinutes(1));
-                            //Processeing the document in this block
+                            //Processing the document in this block
+                            doc.IsInProcess = false;
+                            doc.IsCompleted = true;
                         }
                         catch (Exception ex)
                         {
                             _logger.LogCritical($"Failed to Process Document. UserId: {doc.UserId}, FileName: {doc.FileName}, ErrorMessage: {ex.Message}");
                         }
-
                     });
             });
 
@@ -152,8 +153,14 @@ namespace DocumentScheduler.Lib.Core
             var document = docList.FirstOrDefault(d => d.DocId == updatedDoc.DocId &&
                                                   d.IsInProcess);
             if (document != null)
-                docList.Find(updatedDoc).Value.IsCompleted = true;
-
+            {
+                var node = docList.Find(document);
+                if (node != null)
+                {
+                    node.Value.IsInProcess = false;
+                    node.Value.IsCompleted = updatedDoc.IsCompleted;
+                }
+            }
             return !(document is null);
         }
 
@@ -183,8 +190,8 @@ namespace DocumentScheduler.Lib.Core
         private byte GetSLAByUserId(string userId)
         {
             //Get SLA From DB
-            //var slaTier = _repository.GetSLAByUserId(userId);
-            return 0;
+            var slaTier = (byte)0;//_repository.GetSLAByUserId(userId);
+            return slaTier;
         }
 
         /// <summary>

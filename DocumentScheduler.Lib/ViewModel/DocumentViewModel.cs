@@ -10,7 +10,7 @@ namespace DocumentScheduler.Lib.ViewModel
         public string FileName { get; set; }
         public string DocId { get; set; }
         /// <summary>
-        /// DateTime the document was added to document list that needs to be processed
+        /// DateTime the document that was added to document list that needs to be processed
         /// </summary>
         public DateTime QueuedDate { get; set; }
         /// <summary>
