@@ -94,13 +94,21 @@ namespace DocumentScheduler.Lib.Core
         }
 
         /// <summary>
-        /// Gets the document by document identifier.
+        /// Gets the document by document identifier to be processed by another process
+        /// If the document is found by given id then mark it as is in process, so the
+        /// same document is not processed by two or more different processors.
         /// </summary>
         /// <param name="id">Id.</param>
-        /// <returns>Document</returns>
+        /// <returns>reutrns null if document is in process else returns Document</returns>
         public DocumentViewModel GetDocumentByDocId(string id)
         {
-            return docList.FirstOrDefault(d => d.DocId == id);
+            var doc = docList.FirstOrDefault(d => d.DocId == id && 
+                                                  !d.IsCompleted && 
+                                                  !d.IsInProcess );
+            if (doc != null)
+                docList.Find(doc).Value.IsInProcess = true;
+
+            return doc;
         }
 
         private async Task ProcessDocumentsAsync()
@@ -118,8 +126,9 @@ namespace DocumentScheduler.Lib.Core
             {
                 Parallel.ForEach(
                     docList.Where(d =>
-                        d.IsCompleted == false &&
-                        d.IsInProcess == false).OrderBy(d => d.FinishBy),
+                        !d.IsCompleted &&
+                        !d.IsInProcess)
+                        .OrderBy(d => d.FinishBy),
                     doc =>
                     {
                         try
@@ -202,7 +211,8 @@ namespace DocumentScheduler.Lib.Core
         /// <returns></returns>
         private int DetermineNoOfServersToSpinUp()
         {
-            var noOfDocs = docList.Count(d => d.IsCompleted == false && d.IsInProcess == false);
+            var noOfDocs = docList.Count(d => !d.IsCompleted && 
+                                              !d.IsInProcess);
             var noOfDocForEachServer = noOfDocs / _noOfCores;
 
             if (noOfDocForEachServer <= _noOfCores)
