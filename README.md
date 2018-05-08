@@ -16,8 +16,11 @@ The solution in C#, Implemented the core logic in a .net standard class library 
 Used fake stub function, When spinning up or down servers.
 You don't need to actually receive the documents, just the filenames
 All documents take 1 minute to process
-All the servers are quad core, and max limit for servers are 4.(Values are assigned in AppSettings.config, can be changes if needed)
+All the servers are quad core, and max limit for servers are 4.(Values are assigned in AppSettings.config, can be changes if needed).
+Didnt implement Unit Test, to just focus on implementation of requriements.
 
 Implementation:
 
 Core Login is in Class Library in Document Scheduler.cs //DocumentScheduler.Lib.Core
+
+
