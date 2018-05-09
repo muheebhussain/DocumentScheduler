@@ -22,7 +22,7 @@ namespace DocumentScheduler.Lib.Core
         private readonly int _noOfCores = 4;
 
         //private readonly IRepository _repository;
-        private LinkedList<DocumentViewModel> docList;
+        private LinkedList<DocumentViewModel> _docList;
         private List<ServerViewModel> _servers;
         #endregion
 
@@ -43,6 +43,8 @@ namespace DocumentScheduler.Lib.Core
 
             if (_servers is null)
                 _servers = new List<ServerViewModel>();
+            if (_docList is null)
+                _docList = new LinkedList<DocumentViewModel>();
         }
         #endregion
 
@@ -66,21 +68,21 @@ namespace DocumentScheduler.Lib.Core
             {
                 try
                 {
-                    var newDoc = GetNewDocument(fileName, finishBy);
+                    var newDoc = GetNewDocument(input.UserId, fileName, finishBy);
 
                     //If queue is empty, then add new document first
-                    if (docList.Count == 0)
-                        docList.AddFirst(newDoc);
+                    if (_docList.Count == 0)
+                        _docList.AddFirst(newDoc);
                     else
                     {
-                        var docLookup = docList.FirstOrDefault(d => d.FinishBy <= finishBy);
+                        var docLookup = _docList.FirstOrDefault(d => d.FinishBy <= finishBy);
 
                         if (docLookup is null)
-                            docList.AddFirst(newDoc);
+                            _docList.AddFirst(newDoc);
                         else
                         {
-                            var node = docList.Find(docLookup);
-                            docList.AddAfter(node, newDoc);
+                            var node = _docList.Find(docLookup);
+                            _docList.AddAfter(node, newDoc);
                         }
                     }
                 }
@@ -102,11 +104,11 @@ namespace DocumentScheduler.Lib.Core
         /// <returns>reutrns null if document is in process else returns Document</returns>
         public DocumentViewModel GetDocumentByDocId(string id)
         {
-            var doc = docList.FirstOrDefault(d => d.DocId == id && 
-                                                  !d.IsCompleted && 
-                                                  !d.IsInProcess );
+            var doc = _docList.FirstOrDefault(d => d.DocId == id &&
+                                                  !d.IsCompleted &&
+                                                  !d.IsInProcess);
             if (doc != null)
-                docList.Find(doc).Value.IsInProcess = true;
+                _docList.Find(doc).Value.IsInProcess = true;
 
             return doc;
         }
@@ -114,18 +116,18 @@ namespace DocumentScheduler.Lib.Core
         private async Task ProcessDocumentsAsync()
         {
             //Assuming max server limit is 4 and all servers have quad core processors
-            
+
             int upRunningserverCount = 0;
             var serverToSpinUp = DetermineNoOfServersToSpinUp();
             for (upRunningserverCount = _servers.Count; upRunningserverCount < serverToSpinUp; upRunningserverCount++)
             {
-                _servers.Add( await SpinUpNewServerAsync());
+                _servers.Add(await SpinUpNewServerAsync());
             }
 
             Parallel.ForEach(_servers, server =>
             {
                 Parallel.ForEach(
-                    docList.Where(d =>
+                    _docList.Where(d =>
                         !d.IsCompleted &&
                         !d.IsInProcess)
                         .OrderBy(d => d.FinishBy),
@@ -137,6 +139,7 @@ namespace DocumentScheduler.Lib.Core
                             //Processing the document in this block
                             doc.IsInProcess = false;
                             doc.IsCompleted = true;
+                            _logger.LogInformation($"Document # {doc.DocId} with User # {doc.UserId} processed successfully.");
                         }
                         catch (Exception ex)
                         {
@@ -150,11 +153,11 @@ namespace DocumentScheduler.Lib.Core
 
         public bool UpdateDocument(DocumentViewModel updatedDoc)
         {
-            var document = docList.FirstOrDefault(d => d.DocId == updatedDoc.DocId &&
+            var document = _docList.FirstOrDefault(d => d.DocId == updatedDoc.DocId &&
                                                   d.IsInProcess);
             if (document != null)
             {
-                var node = docList.Find(document);
+                var node = _docList.Find(document);
                 if (node != null)
                 {
                     node.Value.IsInProcess = false;
@@ -166,7 +169,7 @@ namespace DocumentScheduler.Lib.Core
 
         #region Helper Methods
 
-        
+
 
         /// <summary>
         /// Creates new document by generating Guid, filename, queuedDate, finishBy
@@ -174,11 +177,12 @@ namespace DocumentScheduler.Lib.Core
         /// <param name="fileName">Name of the file.</param>
         /// <param name="finishBy">The finish by.</param>
         /// <returns></returns>
-        private DocumentViewModel GetNewDocument(string fileName, DateTime finishBy)
+        private DocumentViewModel GetNewDocument(string userId, string fileName, DateTime finishBy)
         {
             return new DocumentViewModel()
             {
                 DocId = Guid.NewGuid().ToString(),
+                UserId = userId,
                 FileName = fileName,
                 QueuedDate = DateTime.Now,
                 FinishBy = finishBy,
@@ -228,9 +232,10 @@ namespace DocumentScheduler.Lib.Core
         /// <returns></returns>
         private int DetermineNoOfServersToSpinUp()
         {
-            var noOfDocs = docList.Count(d => !d.IsCompleted && 
+            var noOfDocs = _docList.Count(d => !d.IsCompleted &&
                                               !d.IsInProcess);
-            var noOfDocForEachServer = noOfDocs / _noOfCores;
+            //If noOfCores is less than noOfDocs we will only need 1 server, else divide noOfDocs by noOfCores to findout 
+            var noOfDocForEachServer = noOfDocs <= _noOfCores ? 1 : noOfDocs / _noOfCores;
 
             if (noOfDocForEachServer <= _noOfCores)
                 return noOfDocForEachServer;
@@ -247,11 +252,11 @@ namespace DocumentScheduler.Lib.Core
             var server = new ServerViewModel();
             try
             {
-                server = await Task.Run(() => new ServerViewModel());
+                server = await Task.Run(() =>new ServerViewModel(){Status = ""});
             }
             catch (Exception ex)
             {
-                _logger.LogCritical($"Failed to Spin Up Server Document. ServerId: {server?.ServerId}, Server Name: {server?.ServerName}, Error Message: {ex.Message}");
+                _logger.LogCritical($"Failed to Spin Up Server. ServerId: {server?.ServerId}, Server Name: {server?.ServerName}, Error Message: {ex.Message}");
             }
 
             return server;
@@ -261,7 +266,7 @@ namespace DocumentScheduler.Lib.Core
         {
             foreach (var server in _servers)
             {
-                if(server.Status.ToLower() == "idle")
+                if (server?.Status?.ToLower() == "idle")
                     ShutDownServerAsync(server);
             }
 
