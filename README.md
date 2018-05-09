@@ -21,6 +21,6 @@ Didnt implement Unit Test, to just focus on implementation of requriements.
 
 Implementation:
 
-Core Login is in Class Library in Document Scheduler.cs //DocumentScheduler.Lib.Core
+Core Logic is in Class Library in Document Scheduler.cs //DocumentScheduler.Lib.Core
 
 
